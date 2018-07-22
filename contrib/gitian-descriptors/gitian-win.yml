@@ -1,5 +1,5 @@
 ---
-name: "dynamic-2.2.0.0"
+name: "dynamic-2.3.0.0"
 enable_cache: true
 suites:
 - "bionic"
@@ -123,7 +123,7 @@ script: |
   mkdir -p temp
   pushd temp
   tar xf ../$SOURCEDIST
-  find bitcoin-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
+  find dynamic-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
   mkdir -p $OUTDIR/src
   cp ../$SOURCEDIST $OUTDIR/src
   popd
