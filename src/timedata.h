@@ -8,6 +8,8 @@
 #ifndef DYNAMIC_TIMEDATA_H
 #define DYNAMIC_TIMEDATA_H
 
+#include <stdlib.h>
+
 #include <algorithm>
 #include <cassert>
 #include <vector>
