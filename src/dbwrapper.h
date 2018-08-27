@@ -92,8 +92,8 @@ public:
         // - byte[]: value
         // The formula below assumes the key and value are both less than 16k.
         size_estimate += 3 + (slKey.size() > 127) + slKey.size() + (slValue.size() > 127) + slValue.size();
-        ssKey.clear();
-        ssValue.clear();
+        ssKey.Clear();
+        ssValue.Clear();
     }
 
     template <typename K>
@@ -109,7 +109,7 @@ public:
         // - byte[]: key
         // The formula below assumes the key is less than 16kB.
         size_estimate += 2 + (slKey.size() > 127) + slKey.size();
-        ssKey.clear();
+        ssKey.Clear();
     }
 
     size_t SizeEstimate() const { return size_estimate; }
