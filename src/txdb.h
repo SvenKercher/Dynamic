@@ -14,7 +14,6 @@
 #include "spentindex.h"
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,19 +27,19 @@ class uint256;
 //! No need to periodic flush if at least this much space still available.
 static constexpr int MAX_BLOCK_COINSDB_USAGE = 10;
 //! -dbcache default (MiB)
-static const int64_t nDefaultDbCache = 450;
+static const int64_t nDefaultDbCache = 512;
 //! max. -dbcache (MiB)
 static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache (MiB)
-static const int64_t nMinDbCache = 4;
+static const int64_t nMinDbCache = 16;
 //! Max memory allocated to block tree DB specific cache, if no -txindex (MiB)
-static const int64_t nMaxBlockDBCache = 2;
+static const int64_t nMaxBlockDBCache = 8;
 //! Max memory allocated to block tree DB specific cache, if -txindex (MiB)
 // Unlike for the UTXO database, for the txindex scenario the leveldb cache make
 // a meaningful difference: https://github.com/bitcoin/bitcoin/pull/8273#issuecomment-229601991
 static const int64_t nMaxBlockDBAndTxIndexCache = 1024;
 //! Max memory allocated to coin DB specific cache (MiB)
-static const int64_t nMaxCoinsDBCache = 8;
+static const int64_t nMaxCoinsDBCache = 32;
 
 struct CDiskTxPos : public CDiskBlockPos
 {
@@ -68,12 +67,12 @@ struct CDiskTxPos : public CDiskBlockPos
 };
 
 /** CCoinsView backed by the coin database (chainstate/) */
-class CCoinsViewDB final : public CCoinsView
+class CCoinsViewDB : public CCoinsView
 {
 protected:
     CDBWrapper db;
 public:
-    explicit CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
     bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
     bool HaveCoin(const COutPoint &outpoint) const override;
@@ -92,17 +91,17 @@ class CCoinsViewDBCursor: public CCoinsViewCursor
 public:
     ~CCoinsViewDBCursor() {}
 
-    bool GetKey(COutPoint &key) const override;
-    bool GetValue(Coin &coin) const override;
-    unsigned int GetValueSize() const override;
+    bool GetKey(COutPoint &key) const;
+    bool GetValue(Coin &coin) const;
+    unsigned int GetValueSize() const;
 
-    bool Valid() const override;
-    void Next() override;
+    bool Valid() const;
+    void Next();
 
 private:
     CCoinsViewDBCursor(CDBIterator* pcursorIn, const uint256 &hashBlockIn):
         CCoinsViewCursor(hashBlockIn), pcursor(pcursorIn) {}
-    std::unique_ptr<CDBIterator> pcursor;
+    boost::scoped_ptr<CDBIterator> pcursor;
     std::pair<char, COutPoint> keyTmp;
 
     friend class CCoinsViewDB;
