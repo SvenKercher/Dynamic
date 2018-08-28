@@ -24,7 +24,7 @@ class CDynamicLevelDBLogger : public leveldb::Logger {
 public:
     // This code is adapted from posix_logger.h, which is why it is using vsprintf.
     // Please do not do this in normal code
-    void Logv(const char * format, va_list ap) override {
+    virtual void Logv(const char * format, va_list ap) override {
             if (!LogAcceptCategory("leveldb"))
                 return;
             }
