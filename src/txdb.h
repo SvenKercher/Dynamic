@@ -27,13 +27,15 @@ class uint256;
 //! No need to periodic flush if at least this much space still available.
 static constexpr int MAX_BLOCK_COINSDB_USAGE = 10;
 //! -dbcache default (MiB)
-static const int64_t nDefaultDbCache = 512;
+static const int64_t nDefaultDbCache = 450;
+//! -dbbatchsize default (bytes)
+static const int64_t nDefaultDbBatchSize = 16 << 20;
 //! max. -dbcache (MiB)
 static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache (MiB)
-static const int64_t nMinDbCache = 16;
+static const int64_t nMinDbCache = 4;
 //! Max memory allocated to block tree DB specific cache, if no -txindex (MiB)
-static const int64_t nMaxBlockDBCache = 8;
+static const int64_t nMaxBlockDBCache = 2;
 //! Max memory allocated to block tree DB specific cache, if -txindex (MiB)
 // Unlike for the UTXO database, for the txindex scenario the leveldb cache make
 // a meaningful difference: https://github.com/bitcoin/bitcoin/pull/8273#issuecomment-229601991
@@ -77,6 +79,7 @@ public:
     bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
     bool HaveCoin(const COutPoint &outpoint) const override;
     uint256 GetBestBlock() const override;
+    std::vector<uint256> GetHeadBlocks() const override;
     bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) override;
     CCoinsViewCursor *Cursor() const override;
 
@@ -91,17 +94,17 @@ class CCoinsViewDBCursor: public CCoinsViewCursor
 public:
     ~CCoinsViewDBCursor() {}
 
-    bool GetKey(COutPoint &key) const;
-    bool GetValue(Coin &coin) const;
-    unsigned int GetValueSize() const;
+    bool GetKey(COutPoint &key) const override;
+    bool GetValue(Coin &coin) const override;
+    unsigned int GetValueSize() const override;
 
-    bool Valid() const;
-    void Next();
+    bool Valid() const override;
+    void Next() override;
 
 private:
     CCoinsViewDBCursor(CDBIterator* pcursorIn, const uint256 &hashBlockIn):
         CCoinsViewCursor(hashBlockIn), pcursor(pcursorIn) {}
-    boost::scoped_ptr<CDBIterator> pcursor;
+    std::unique_ptr<CDBIterator> pcursor;
     std::pair<char, COutPoint> keyTmp;
 
     friend class CCoinsViewDB;
@@ -111,7 +114,7 @@ private:
 class CBlockTreeDB : public CDBWrapper
 {
 public:
-    CBlockTreeDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    explicit CBlockTreeDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 private:
     CBlockTreeDB(const CBlockTreeDB&);
     void operator=(const CBlockTreeDB&);
