@@ -130,8 +130,8 @@ public:
      * @param[in] _parent          Parent CDBWrapper instance.
      * @param[in] _piter           The original leveldb iterator.
      */
-    CDBIterator(const CDBWrapper &_parent, leveldb::Iterator *_piter) :
-        parent(_parent), piter(_piter) { };
+    CDBIterator(const CDBWrapper &parent, leveldb::Iterator *piterIn) :
+        parent(parent), piter(piterIn) { };
     ~CDBIterator();
 
     bool Valid() const;
