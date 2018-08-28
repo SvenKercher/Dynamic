@@ -7,18 +7,17 @@
 
 #include "dbwrapper.h"
 
-#include "random.h"
 #include "util.h"
+#include "random.h"
 
-#include <algorithm>
-#include <memenv.h>
-#include <stdint.h>
+#include <boost/filesystem.hpp>
 
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
-
-#include <boost/filesystem.hpp>
+#include <memenv.h>
+#include <stdint.h>
+#include <algorithm>
 
 class CDynamicLevelDBLogger : public leveldb::Logger {
 public:
@@ -118,12 +117,6 @@ CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, b
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
-
-    if (GetBoolArg("-forcecompactdb", false)) {
-        LogPrintf("Starting database compaction of %s\n", path.string());
-        pdb->CompactRange(nullptr, nullptr);
-        LogPrintf("Finished database compaction of %s\n", path.string());
-    }
 
     if (GetBoolArg("-forcecompactdb", false)) {
         LogPrintf("Starting database compaction of %s\n", path.string());
