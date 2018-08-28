@@ -26,7 +26,7 @@ static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
 class dbwrapper_error : public std::runtime_error
 {
 public:
-    dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
+    explicit dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 class CDBWrapper;
@@ -63,9 +63,9 @@ private:
 
 public:
     /**
-     * @param[in] parent    CDBWrapper that this batch is to be submitted to
+     * @param[in] _parent   CDBWrapper that this batch is to be submitted to
      */
-    CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
+    explicit CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
 
     void Clear()
     {
@@ -86,6 +86,8 @@ public:
         leveldb::Slice slValue(ssValue.data(), ssValue.size());
 
         batch.Put(slKey, slValue);
+        // LevelDB serializes writes as:
+        // - byte: header
         // - varint: key length (1 byte up to 127B, 2 bytes up to 16383B, ...)
         // - byte[]: key
         // - varint: value length
@@ -104,6 +106,7 @@ public:
         leveldb::Slice slKey(ssKey.data(), ssKey.size());
 
         batch.Delete(slKey);
+        // LevelDB serializes erases as:
         // - byte: header
         // - varint: key length
         // - byte[]: key
@@ -124,13 +127,14 @@ private:
 public:
 
     /**
-     * @param[in] parent           Parent CDBWrapper instance.
+     * @param[in] _parent          Parent CDBWrapper instance.
+     * @param[in] _piter           The original leveldb iterator.
      */
-    CDBIterator(const CDBWrapper &parent, leveldb::Iterator *piterIn) :
-        parent(parent), piter(piterIn) { };
+    CDBIterator(const CDBWrapper &_parent, leveldb::Iterator *_piter) :
+        parent(_parent), piter(_piter) { };
     ~CDBIterator();
 
-    bool Valid();
+    bool Valid() const;
 
     void SeekToFirst();
 
@@ -177,7 +181,7 @@ class CDBWrapper
 {
     friend const std::vector<unsigned char>& dbwrapper_private::GetObfuscateKey(const CDBWrapper &w);
 private:
-    //! custom environment this database is using (may be NULL in case of default environment)
+    //! custom environment this database is using (may be nullptr in case of default environment)
     leveldb::Env* penv;
 
     //! database options used
@@ -197,6 +201,9 @@ private:
 
     //! the database itself
     leveldb::DB* pdb;
+
+    //! the name of this database
+    std::string m_name;
 
     //! a key used for optional XOR-obfuscation of the database
     std::vector<unsigned char> obfuscate_key;
@@ -220,6 +227,9 @@ public:
      */
     CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
     ~CDBWrapper();
+
+    CDBWrapper(const CDBWrapper&) = delete;
+    CDBWrapper& operator=(const CDBWrapper&) = delete;
 
     template <typename K, typename V>
     bool Read(const K& key, V& value) const
@@ -283,6 +293,9 @@ public:
     }
 
     bool WriteBatch(CDBBatch& batch, bool fSync = false);
+
+    // Get an estimate of LevelDB memory usage (in bytes).
+    size_t DynamicMemoryUsage() const;
 
     // not available for LevelDB; provide for compatibility with BDB
     bool Flush()
