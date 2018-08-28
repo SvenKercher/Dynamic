@@ -14,6 +14,7 @@
 #include "spentindex.h"
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,8 +29,6 @@ class uint256;
 static constexpr int MAX_BLOCK_COINSDB_USAGE = 10;
 //! -dbcache default (MiB)
 static const int64_t nDefaultDbCache = 450;
-//! -dbbatchsize default (bytes)
-static const int64_t nDefaultDbBatchSize = 16 << 20;
 //! max. -dbcache (MiB)
 static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache (MiB)
@@ -41,7 +40,7 @@ static const int64_t nMaxBlockDBCache = 2;
 // a meaningful difference: https://github.com/bitcoin/bitcoin/pull/8273#issuecomment-229601991
 static const int64_t nMaxBlockDBAndTxIndexCache = 1024;
 //! Max memory allocated to coin DB specific cache (MiB)
-static const int64_t nMaxCoinsDBCache = 32;
+static const int64_t nMaxCoinsDBCache = 8;
 
 struct CDiskTxPos : public CDiskBlockPos
 {
@@ -69,17 +68,16 @@ struct CDiskTxPos : public CDiskBlockPos
 };
 
 /** CCoinsView backed by the coin database (chainstate/) */
-class CCoinsViewDB : public CCoinsView
+class CCoinsViewDB final : public CCoinsView
 {
 protected:
     CDBWrapper db;
 public:
-    CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    explicit CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
     bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
     bool HaveCoin(const COutPoint &outpoint) const override;
     uint256 GetBestBlock() const override;
-    std::vector<uint256> GetHeadBlocks() const override;
     bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) override;
     CCoinsViewCursor *Cursor() const override;
 
@@ -120,7 +118,7 @@ private:
     void operator=(const CBlockTreeDB&);
 public:
     bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo);
-    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &fileinfo);
+    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info);
     bool ReadLastBlockFile(int &nFile);
     bool WriteReindexing(bool fReindex);
     bool ReadReindexing(bool &fReindex);
