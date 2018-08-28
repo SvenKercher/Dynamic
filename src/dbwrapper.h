@@ -8,12 +8,12 @@
 #ifndef DYNAMIC_DBWRAPPER_H
 #define DYNAMIC_DBWRAPPER_H
 
-#include "clientversion.h"
-#include "serialize.h"
-#include "streams.h"
-#include "util.h"
-#include "utilstrencodings.h"
-#include "version.h"
+#include <clientversion.h>
+#include <serialize.h>
+#include <streams.h>
+#include <util.h>
+#include <utilstrencodings.h>
+#include <version.h>
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -130,8 +130,8 @@ public:
      * @param[in] _parent          Parent CDBWrapper instance.
      * @param[in] _piter           The original leveldb iterator.
      */
-    CDBIterator(const CDBWrapper &parent, leveldb::Iterator *piterIn) :
-        parent(parent), piter(piterIn) { };
+    CDBIterator(const CDBWrapper &_parent, leveldb::Iterator *_piter) :
+        parent(_parent), piter(_piter) { };
     ~CDBIterator();
 
     bool Valid() const;
